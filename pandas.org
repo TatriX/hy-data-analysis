@@ -18,7 +18,7 @@ session as well as define helper functions.
     (print (tabulate frame :headers "keys" :tablefmt "orgtbl")))
 #+end_src
 * 5 Getting Started with pandas
-** 5.1 Introduction to pandas Data Structures (Series)
+** TODO 5.1 Introduction to pandas Data Structures (Series)
 *** Series
 So, ~Series~ is a one dimensional array-like object with data labels ~index~.
 In context of ~DataFrame~, ~Series~ is a column.
@@ -326,132 +326,124 @@ True
 :end:
 ** 5.2 Essential Functionality
 *** Reindexing
-#+begin_src hy :session Hy :results output
-(setx obj (pd.Series [4.5 7.2 -5.3 3.6] :index ["d" "b" "a" "c"]))
-(setx obj2 (obj.reindex ["a" "b" "c" "d" "e"]))
-#+end_src
+- Set ~obj~
+  #+begin_src hy :session Hy :results output
+  (setx obj (pd.Series [4.5 7.2 -5.3 3.6] :index ["d" "b" "a" "c"]))
+  #+end_src
 
-#+RESULTS:
-#+begin_example
-d    4.5
-b    7.2
-a   -5.3
-c    3.6
-dtype: float64
-a   -5.3
-b    7.2
-c    3.6
-d    4.5
-e    NaN
-dtype: float64
-#+end_example
+  #+RESULTS:
+  : d    4.5
+  : b    7.2
+  : a   -5.3
+  : c    3.6
+  : dtype: float64
+- Set ~obj2~
+  #+begin_src hy :session Hy :results output
+  (setx obj2 (obj.reindex ["a" "b" "c" "d" "e"]))
+  #+end_src
 
-#+begin_src hy :session Hy :results output
-(setx obj3 (pd.Series ["blue" "purple" "yellow"] :index [0 2 4]))
-#+end_src
+  #+RESULTS:
+  : a   -5.3
+  : b    7.2
+  : c    3.6
+  : d    4.5
+  : e    NaN
+  : dtype: float64
+- Set ~obj3~
+  #+begin_src hy :session Hy :results output
+  (setx obj3 (pd.Series ["blue" "purple" "yellow"] :index [0 2 4]))
+  #+end_src
 
-#+RESULTS:
-: 0      blue
-: 2    purple
-: 4    yellow
-: dtype: object
+  #+RESULTS:
+  : 0      blue
+  : 2    purple
+  : 4    yellow
+  : dtype: object
+- Reindex with ~ffill~
+  #+begin_src hy :session Hy :results output
+    (obj3.reindex (range 6) :method "ffill")
+  #+end_src
 
-#+begin_src hy :session Hy :results output
-  (obj3.reindex (range 6) :method "ffill")
-#+end_src
-
-#+RESULTS:
-: 0      blue
-: 1      blue
-: 2    purple
-: 3    purple
-: 4    yellow
-: 5    yellow
-: dtype: object
-
+  #+RESULTS:
+  : 0      blue
+  : 1      blue
+  : 2    purple
+  : 3    purple
+  : 4    yellow
+  : 5    yellow
+  : dtype: object
 *** Dropping entries from an Axis
-#+begin_src hy :session Hy :results output drawer
-    (setv obj (pd.Series (np.arange 5.) :index ["a" "b" "c" "d" "e"]))
-    (print obj)
-#+end_src
+- Set ~obj~
+  #+begin_src hy :session Hy :results output
+      (setx obj (pd.Series (np.arange 5.) :index ["a" "b" "c" "d" "e"]))
+  #+end_src
 
-#+RESULTS:
-:results:
-a    0.0
-b    1.0
-c    2.0
-d    3.0
-e    4.0
-dtype: float64
-:end:
+  #+RESULTS:
+  : a    0.0
+  : b    1.0
+  : c    2.0
+  : d    3.0
+  : e    4.0
+  : dtype: float64
+- Drop ~c~
+  #+begin_src hy :session Hy :results output
+  (setx new_obj (obj.drop "c"))
+  #+end_src
 
-#+begin_src hy :session Hy :results output drawer
-(setv new_obj (obj.drop "c"))
-new_obj
-#+end_src
+  #+RESULTS:
+  : a    0.0
+  : b    1.0
+  : d    3.0
+  : e    4.0
+  : dtype: float64
+- Drop ~[d c]~
+  #+begin_src hy :session Hy :results output
+  (obj.drop ["d" "c"])
+  #+end_src
 
-#+RESULTS:
-:results:
-a    0.0
-b    1.0
-d    3.0
-e    4.0
-dtype: float64
-:end:
+  #+RESULTS:
+  : a    0.0
+  : b    1.0
+  : e    4.0
+  : dtype: float64
+- Tuple syntax example
+  #+begin_src hy :session Hy :results output
+    (setv data (pd.DataFrame (.reshape (np.arange 16) (, 4 4))
+                             :index ["Ohio" "Colorado" "Utah" "New York"]
+                             :columns ["one" "two" "three" "four"]))
+    (print data)
+    (print (data.drop ["Colorado" "Ohio"]))
+    (print (data.drop "two" :axis 1))
+  #+end_src
 
-#+begin_src hy :session Hy :results output drawer
-(obj.drop ["d" "c"])
-#+end_src
+  #+RESULTS:
+  #+begin_example
+  ... ...           one  two  three  four
+  Ohio        0    1      2     3
+  Colorado    4    5      6     7
+  Utah        8    9     10    11
+  New York   12   13     14    15
+  one  two  three  four
+  Utah        8    9     10    11
+  New York   12   13     14    15
+  one  three  four
+  Ohio        0      2     3
+  Colorado    4      6     7
+  Utah        8     10    11
+  New York   12     14    15
+  #+end_example
+- Drop in place
+ #+begin_src hy :session Hy :results output
+ (obj.drop "c" :inplace True)
+ obj
+ #+end_src
 
-#+RESULTS:
-:results:
-a    0.0
-b    1.0
-e    4.0
-dtype: float64
-:end:
-
-#+begin_src hy :session Hy :results output drawer
-;; tupple syntax example bellow
-  (setv data (pd.DataFrame (.reshape (np.arange 16) (, 4 4))
-                           :index ["Ohio" "Colorado" "Utah" "New York"]
-                           :columns ["one" "two" "three" "four"]))
-(print data)
-(print (data.drop ["Colorado" "Ohio"]))
-(print (data.drop "two" :axis 1))
-#+end_src
-
-#+RESULTS:
-:results:
-... ...           one  two  three  four
-Ohio        0    1      2     3
-Colorado    4    5      6     7
-Utah        8    9     10    11
-New York   12   13     14    15
-one  two  three  four
-Utah        8    9     10    11
-New York   12   13     14    15
-one  three  four
-Ohio        0      2     3
-Colorado    4      6     7
-Utah        8     10    11
-New York   12     14    15
-:end:
-
-#+begin_src hy :session Hy :results output drawer
-(obj.drop "c" :inplace True)
-obj
-#+end_src
-
-#+RESULTS:
-:results:
-a    0.0
-b    1.0
-d    3.0
-e    4.0
-dtype: float64
-:end:
-
+ #+RESULTS:
+ : a    0.0
+ : b    1.0
+ : d    3.0
+ : e    4.0
+ : dtype: float64
 *** Indexing, Selection, and Filtering
 - Set ~obj~
   #+begin_src hy :session Hy :results output
