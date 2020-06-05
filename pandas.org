@@ -722,13 +722,205 @@ True
   : dtype: float64
 
 *** Arithmetic and Data Alignment
-- Next thing will be here
+- Set ~s1~
   #+begin_src hy :session Hy :results output
-  (+ 2 2)
+    (setx s1 (pd.Series [7.3, -2.5, 3.4, 1.5] :index ["a" "c" "d" "e"]))
   #+end_src
 
   #+RESULTS:
-  : 4
+  : a    7.3
+  : c   -2.5
+  : d    3.4
+  : e    1.5
+  : dtype: float64
+- Set ~s2~
+  #+begin_src hy :session Hy :results output
+  (setx s2 (pd.Series [-2.1 3.6 -1.5 4 3.1] :index ["a" "c" "e" "f" "g"]))
+  #+end_src
+
+  #+RESULTS:
+  : a   -2.1
+  : c    3.6
+  : e   -1.5
+  : f    4.0
+  : g    3.1
+  : dtype: float64
+- Add ~s1~ and ~s2~
+  #+begin_src hy :session Hy :results output
+  (+ s1 s2)
+  #+end_src
+
+  #+RESULTS:
+  : a    5.2
+  : c    1.1
+  : d    NaN
+  : e    0.0
+  : f    NaN
+  : g    NaN
+  : dtype: float64
+- Set ~df1~
+  #+begin_src hy :session Hy :results output
+    (print-org-table
+      (setx df1 (pd.DataFrame (-> (np.arange 9.) (.reshape (, 3 3)))
+                              :columns (list "bcd")
+                              :index ["Ohio" "Texas" "Colorado"])))
+  #+end_src
+
+  #+RESULTS:
+  : ... ... ...
+  : |          |   b |   c |   d |
+  : |----------+-----+-----+-----|
+  : | Ohio     |   0 |   1 |   2 |
+  : | Texas    |   3 |   4 |   5 |
+  : | Colorado |   6 |   7 |   8 |
+- Set ~df2~
+  #+begin_src hy :session Hy :results output
+  (print-org-table
+      (setx df2 (pd.DataFrame (-> (np.arange 12.) (.reshape (, 4 3)))
+                              :columns (list "bde")
+                              :index ["Utah" "Ohio" "Texas" "Oregon"])))
+  #+end_src
+
+  #+RESULTS:
+  : ... ... ...
+  : |        |   b |   d |   e |
+  : |--------+-----+-----+-----|
+  : | Utah   |   0 |   1 |   2 |
+  : | Ohio   |   3 |   4 |   5 |
+  : | Texas  |   6 |   7 |   8 |
+  : | Oregon |   9 |  10 |  11 |
+- Add ~df1~ and ~df2~
+  #+begin_src hy :session Hy :results output
+  (print-org-table (+ df1 df2))
+  #+end_src
+
+  #+RESULTS:
+  : |          |   b |   c |   d |   e |
+  : |----------+-----+-----+-----+-----|
+  : | Colorado | nan | nan | nan | nan |
+  : | Ohio     |   3 | nan |   6 | nan |
+  : | Oregon   | nan | nan | nan | nan |
+  : | Texas    |   9 | nan |  12 | nan |
+  : | Utah     | nan | nan | nan | nan |
+- Add with ~fill_value~
+  #+begin_src hy :session Hy :results output
+  (print-org-table (df1.add df2 :fill-value 0))
+  #+end_src
+
+  #+RESULTS:
+  : |          |   b |   c |   d |   e |
+  : |----------+-----+-----+-----+-----|
+  : | Colorado |   6 |   7 |   8 | nan |
+  : | Ohio     |   3 |   1 |   6 |   5 |
+  : | Oregon   |   9 | nan |  10 |  11 |
+  : | Texas    |   9 |   4 |  12 |   8 |
+  : | Utah     |   0 | nan |   1 |   2 |
+**** Operation between ~~DataFrame~ and ~Series~
+- Set ~arr~
+  #+begin_src hy :session Hy :results output
+  (setx arr (-> (np.arange 12.) (.reshape (, 3 4))))
+  (print)
+  (get arr 0)
+  #+end_src
+
+  #+RESULTS:
+  : array([[ 0.,  1.,  2.,  3.],
+  :        [ 4.,  5.,  6.,  7.],
+  :        [ 8.,  9., 10., 11.]])
+  :
+  : array([0., 1., 2., 3.])
+- Sub ~arr[0]~ from ~arr~
+  #+begin_src hy :session Hy :results output
+  (- arr (get arr 0))
+  #+end_src
+
+  #+RESULTS:
+  : array([[0., 0., 0., 0.],
+  :        [4., 4., 4., 4.],
+  :        [8., 8., 8., 8.]])
+- Set ~frame~
+  #+begin_src hy :session Hy :results output
+    (print-org-table
+      (setx frame (pd.DataFrame (-> (np.arange 12.) (.reshape (, 4 3)))
+                                :columns (list "bde")
+                                :index ["Utah" "Ohio" "Texas" "Oregon"])))
+  #+end_src
+
+  #+RESULTS:
+  : ... ... ...
+  : |        |   b |   d |   e |
+  : |--------+-----+-----+-----|
+  : | Utah   |   0 |   1 |   2 |
+  : | Ohio   |   3 |   4 |   5 |
+  : | Texas  |   6 |   7 |   8 |
+  : | Oregon |   9 |  10 |  11 |
+- Set ~series~
+  #+begin_src hy :session Hy :results output
+  (setx series (get frame.iloc 0))
+  #+end_src
+
+  #+RESULTS:
+  : b    0.0
+  : d    1.0
+  : e    2.0
+  : Name: Utah, dtype: float64
+- Sub ~series~ from ~frame~
+  #+begin_src hy :session Hy :results output
+  (print-org-table (- frame series))
+  #+end_src
+
+  #+RESULTS:
+  : |        |   b |   d |   e |
+  : |--------+-----+-----+-----|
+  : | Utah   |   0 |   0 |   0 |
+  : | Ohio   |   3 |   3 |   3 |
+  : | Texas  |   6 |   6 |   6 |
+  : | Oregon |   9 |   9 |   9 |
+- Set ~series2~
+  #+begin_src hy :session Hy :results output
+  (setx series2 (pd.Series (range 3) :index ["b" "e" "f"]))
+  #+end_src
+
+  #+RESULTS:
+  : b    0
+  : e    1
+  : f    2
+  : dtype: int64
+- Add ~series2~ to ~frame~
+  #+begin_src hy :session Hy :results output
+  (print-org-table (+ frame series2))
+  #+end_src
+
+  #+RESULTS:
+  : |        |   b |   d |   e |   f |
+  : |--------+-----+-----+-----+-----|
+  : | Utah   |   0 | nan |   3 | nan |
+  : | Ohio   |   3 | nan |   6 | nan |
+  : | Texas  |   6 | nan |   9 | nan |
+  : | Oregon |   9 | nan |  12 | nan |
+- Set ~series3~
+  #+begin_src hy :session Hy :results output
+  (setx series3 (get frame "d"))
+  #+end_src
+
+  #+RESULTS:
+  : Utah       1.0
+  : Ohio       4.0
+  : Texas      7.0
+  : Oregon    10.0
+  : Name: d, dtype: float64
+- Sub ~series2~ from ~frame~ with ~axis~
+  #+begin_src hy :session Hy :results output
+  (print-org-table (frame.sub series3 :axis "index"))
+  #+end_src
+
+  #+RESULTS:
+  : |        |   b |   d |   e |
+  : |--------+-----+-----+-----|
+  : | Utah   |  -1 |   0 |   1 |
+  : | Ohio   |  -1 |   0 |   1 |
+  : | Texas  |  -1 |   0 |   1 |
+  : | Oregon |  -1 |   0 |   1 |
 
 * 9 Visualization
 #+begin_src hy :session Hy :results file link :file "/tmp/myfig.png"
