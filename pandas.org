@@ -1,0 +1,749 @@
+# -*- org-confirm-babel-evaluate: nil; -*-
+
+#+TITLE: Python for Data Analysis with Hy
+#+STARTUP: content
+* Setup
+Import ~numpy~, ~pandas~ and ~matplotlib~ optionally starting =*Hy*=
+session as well as define helper functions.
+
+#+begin_src hy :session Hy :results silent
+  (import [numpy :as np])
+  (import [pandas :as pd])
+  (import [matplotlib.pyplot :as plt])
+
+  (import [tabulate [tabulate]])
+
+  (defn print-org-table [frame]
+    (print)
+    (print (tabulate frame :headers "keys" :tablefmt "orgtbl")))
+#+end_src
+* 5 Getting Started with pandas
+** 5.1 Introduction to pandas Data Structures (Series)
+*** Series
+So, ~Series~ is a one dimensional array-like object with data labels ~index~.
+In context of ~DataFrame~, ~Series~ is a column.
+
+- Set ~obj~ and see it's ~index~
+  #+begin_src hy :session Hy :results output
+    (setx obj (pd.Series [4 7 -5 3]))
+  #+end_src
+
+  #+RESULTS:
+  : 0    4
+  : 1    7
+  : 2   -5
+  : 3    3
+  : dtype: int64
+- ~obj~ ~index~
+  #+begin_src hy :session Hy :results output
+  obj.index
+  #+end_src
+
+  #+RESULTS:
+  : RangeIndex(start=0, stop=4, step=1)
+
+  - Underlying array
+    #+begin_src hy :session Hy :results output
+    obj.values
+    #+end_src
+
+    #+RESULTS:
+    : array([ 4,  7, -5,  3])
+- The rest
+  #+begin_src hy :session Hy :results output
+    (setv obj2 (pd.Series [4 7 -5 3] :index ["d" "b" "a" "c"]))
+    (print obj2)
+    (print obj2.index)
+
+    ;; Accessing Series elements.
+    (print obj2.a)
+    (print (get obj2 "b"))
+    (print (. obj2 a))
+
+    (setv obj2.d 6)
+
+    (print obj2["c" "a" "d"])
+
+    (. obj2 [(> obj2 0)])
+
+    (* obj2 2)
+
+    (np.exp obj2)
+
+    (in "b" obj2)
+    (in "e" obj2)
+
+    (setv sdata {"Ohio" 3500 "Texas" 71000 "Oregon" 16000 "Utah" 5000})
+    (setv obj3 (pd.Series sdata))
+
+    (print obj3)
+
+    (setv states ["California" "Ohio" "Oregon" "Texas"])
+    (setv obj4 (pd.Series sdata :index states))
+    (print obj4)
+    (pd.isnull obj4)
+    (pd.notnull obj4)
+
+    (obj4.isnull)
+
+    (+ obj3 obj4)
+
+    (setv obj4.name "population")
+    (setv obj4.index.name "state")
+
+    (print obj)
+    (setv obj.index ["Bob" "Steve" "Jeff" "Ryan"])
+    (print obj)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+  d    4
+  b    7
+  a   -5
+  c    3
+  dtype: int64
+  Index(['d', 'b', 'a', 'c'], dtype='object')
+  -5
+  7
+  -5
+  d    6
+  b    7
+  a   -5
+  c    3
+  dtype: int64 ['c', 'a', 'd']
+  d    6
+  b    7
+  c    3
+  dtype: int64
+  d    12
+  b    14
+  a   -10
+  c     6
+  dtype: int64
+  d     403.428793
+  b    1096.633158
+  a       0.006738
+  c      20.085537
+  dtype: float64
+  True
+  False
+  Ohio       3500
+  Texas     71000
+  Oregon    16000
+  Utah       5000
+  dtype: int64
+  California        NaN
+  Ohio           3500.0
+  Oregon        16000.0
+  Texas         71000.0
+  dtype: float64
+  California     True
+  Ohio          False
+  Oregon        False
+  Texas         False
+  dtype: bool
+  California    False
+  Ohio           True
+  Oregon         True
+  Texas          True
+  dtype: bool
+  California     True
+  Ohio          False
+  Oregon        False
+  Texas         False
+  dtype: bool
+  California         NaN
+  Ohio            7000.0
+  Oregon         32000.0
+  Texas         142000.0
+  Utah               NaN
+  dtype: float64
+  0    4
+  1    7
+  2   -5
+  3    3
+  dtype: int64
+  Bob      4
+  Steve    7
+  Jeff    -5
+  Ryan     3
+  dtype: int64
+  #+end_example
+
+*** DataFrame
+=DataFrame= is analogous to SQL table/view/select.  It's an ordered
+table of columns. So =DataFrame= is a dict of (column-name -> Series)
+or set of columns.
+
+**** Dict -> List
+#+begin_src hy :session Hy :results output org drawer
+  (setv data {"state" ["Ohio" "Ohio" "Ohio" "Nevada" "Nevada" "Nevada"]
+              "year" [2000 2001 2002 2001 2002 2003]
+              "pop" [1.5 1.7 3.6 2.4 2.9 3.2]})
+
+  (setv frame (pd.DataFrame data
+                            :columns ["year" "state" "pop" "debt"]
+                            :index ["one" "two" "three" "four" "five" "six"]))
+  (print-org-table frame)
+  (print (* "-" 13))
+  (print frame.columns)
+  (print (* "-" 13))
+  (print frame.state)
+  (print (* "-" 13))
+  (print (. frame.loc ["three"]))
+  (print (* "-" 13))
+  (setv frame.debt (np.arange 6.))
+  (print frame)
+  (print (* "-" 13))
+  (setv frame.debt (pd.Series [-1.2 -1.5 -1.7] :index ["two" "four" "five"]))
+  (print frame)
+  (print (* "-" 13))
+  (setv (. frame ["eastern"]) (= frame.state "Ohio"))
+  (print frame)
+  (del (. frame ["eastern"]))
+  (print frame.columns)
+  (print (* "-" 13))
+#+end_src
+
+#+RESULTS:
+:results:
+... ... ... ...
+|       |   year | state   |   pop |   debt |
+|-------+--------+---------+-------+--------|
+| one   |   2000 | Ohio    |   1.5 |    nan |
+| two   |   2001 | Ohio    |   1.7 |    nan |
+| three |   2002 | Ohio    |   3.6 |    nan |
+| four  |   2001 | Nevada  |   2.4 |    nan |
+| five  |   2002 | Nevada  |   2.9 |    nan |
+| six   |   2003 | Nevada  |   3.2 |    nan |
+-------------
+Index(['year', 'state', 'pop', 'debt'], dtype='object')
+-------------
+one        Ohio
+two        Ohio
+three      Ohio
+four     Nevada
+five     Nevada
+six      Nevada
+Name: state, dtype: object
+-------------
+year     2002
+state    Ohio
+pop       3.6
+debt      NaN
+Name: three, dtype: object
+-------------
+       year   state  pop  debt
+one    2000    Ohio  1.5   0.0
+two    2001    Ohio  1.7   1.0
+three  2002    Ohio  3.6   2.0
+four   2001  Nevada  2.4   3.0
+five   2002  Nevada  2.9   4.0
+six    2003  Nevada  3.2   5.0
+-------------
+       year   state  pop  debt
+one    2000    Ohio  1.5   NaN
+two    2001    Ohio  1.7  -1.2
+three  2002    Ohio  3.6   NaN
+four   2001  Nevada  2.4  -1.5
+five   2002  Nevada  2.9  -1.7
+six    2003  Nevada  3.2   NaN
+-------------
+       year   state  pop  debt  eastern
+one    2000    Ohio  1.5   NaN     True
+two    2001    Ohio  1.7  -1.2     True
+three  2002    Ohio  3.6   NaN     True
+four   2001  Nevada  2.4  -1.5    False
+five   2002  Nevada  2.9  -1.7    False
+six    2003  Nevada  3.2   NaN    False
+Index(['year', 'state', 'pop', 'debt'], dtype='object')
+-------------
+:end:
+**** Dict -> Dict
+#+begin_src hy :session Hy :results output org drawer
+  (setv pop {"Ohio" {2000 1.5
+                     2001 1.7
+                     2002 3.6}
+             "Nevada" {2001 2.4
+                       2002 2.9}})
+  (setv frame3 (pd.DataFrame pop))
+  (print-org-table frame3)
+  (print (* "-" 13))
+  (print-org-table frame3.T)
+  (print (* "-" 13))
+  (setv pdata {"Ohio" (cut (. frame3 ["Ohio"]) None -1)
+               "Nevada" (cut (. frame3 ["Nevada"]) None 2)})
+  (print-org-table (pd.DataFrame pdata))
+  (setv frame3.index.name  "year")
+  (setv frame3.columns.name  "state")
+  (print frame3)
+  (print frame3.values)
+#+end_src
+
+#+RESULTS:
+:results:
+... ... ... ...
+|      |   Ohio |   Nevada |
+|------+--------+----------|
+| 2000 |    1.5 |    nan   |
+| 2001 |    1.7 |      2.4 |
+| 2002 |    3.6 |      2.9 |
+-------------
+|        |   2000 |   2001 |   2002 |
+|--------+--------+--------+--------|
+| Ohio   |    1.5 |    1.7 |    3.6 |
+| Nevada |  nan   |    2.4 |    2.9 |
+-------------
+...
+|      |   Ohio |   Nevada |
+|------+--------+----------|
+| 2000 |    1.5 |    nan   |
+| 2001 |    1.7 |      2.4 |
+state  Ohio  Nevada
+year
+2000    1.5     NaN
+2001    1.7     2.4
+2002    3.6     2.9
+[[1.5 nan]
+ [1.7 2.4]
+ [3.6 2.9]]
+:end:
+**** Index
+#+begin_src hy :session Hy :results output org drawer
+(setv frame (pd.DataFrame [{"x" 1, "y" 2, "z" 3}] :index ["q" "w" "e"]))
+(print frame)
+(in "x" frame.columns)
+#+end_src
+
+#+RESULTS:
+:results:
+x  y  z
+q  1  2  3
+w  1  2  3
+e  1  2  3
+True
+:end:
+** 5.2 Essential Functionality
+*** Reindexing
+#+begin_src hy :session Hy :results output
+(setx obj (pd.Series [4.5 7.2 -5.3 3.6] :index ["d" "b" "a" "c"]))
+(setx obj2 (obj.reindex ["a" "b" "c" "d" "e"]))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+d    4.5
+b    7.2
+a   -5.3
+c    3.6
+dtype: float64
+a   -5.3
+b    7.2
+c    3.6
+d    4.5
+e    NaN
+dtype: float64
+#+end_example
+
+#+begin_src hy :session Hy :results output
+(setx obj3 (pd.Series ["blue" "purple" "yellow"] :index [0 2 4]))
+#+end_src
+
+#+RESULTS:
+: 0      blue
+: 2    purple
+: 4    yellow
+: dtype: object
+
+#+begin_src hy :session Hy :results output
+  (obj3.reindex (range 6) :method "ffill")
+#+end_src
+
+#+RESULTS:
+: 0      blue
+: 1      blue
+: 2    purple
+: 3    purple
+: 4    yellow
+: 5    yellow
+: dtype: object
+
+*** Dropping entries from an Axis
+#+begin_src hy :session Hy :results output drawer
+    (setv obj (pd.Series (np.arange 5.) :index ["a" "b" "c" "d" "e"]))
+    (print obj)
+#+end_src
+
+#+RESULTS:
+:results:
+a    0.0
+b    1.0
+c    2.0
+d    3.0
+e    4.0
+dtype: float64
+:end:
+
+#+begin_src hy :session Hy :results output drawer
+(setv new_obj (obj.drop "c"))
+new_obj
+#+end_src
+
+#+RESULTS:
+:results:
+a    0.0
+b    1.0
+d    3.0
+e    4.0
+dtype: float64
+:end:
+
+#+begin_src hy :session Hy :results output drawer
+(obj.drop ["d" "c"])
+#+end_src
+
+#+RESULTS:
+:results:
+a    0.0
+b    1.0
+e    4.0
+dtype: float64
+:end:
+
+#+begin_src hy :session Hy :results output drawer
+;; tupple syntax example bellow
+  (setv data (pd.DataFrame (.reshape (np.arange 16) (, 4 4))
+                           :index ["Ohio" "Colorado" "Utah" "New York"]
+                           :columns ["one" "two" "three" "four"]))
+(print data)
+(print (data.drop ["Colorado" "Ohio"]))
+(print (data.drop "two" :axis 1))
+#+end_src
+
+#+RESULTS:
+:results:
+... ...           one  two  three  four
+Ohio        0    1      2     3
+Colorado    4    5      6     7
+Utah        8    9     10    11
+New York   12   13     14    15
+one  two  three  four
+Utah        8    9     10    11
+New York   12   13     14    15
+one  three  four
+Ohio        0      2     3
+Colorado    4      6     7
+Utah        8     10    11
+New York   12     14    15
+:end:
+
+#+begin_src hy :session Hy :results output drawer
+(obj.drop "c" :inplace True)
+obj
+#+end_src
+
+#+RESULTS:
+:results:
+a    0.0
+b    1.0
+d    3.0
+e    4.0
+dtype: float64
+:end:
+
+*** Indexing, Selection, and Filtering
+- Set ~obj~
+  #+begin_src hy :session Hy :results output
+  (setx obj ( pd.Series (np.arange 4.) :index ["a" "b" "c" "d"]))
+  #+end_src
+
+  #+RESULTS:
+  : a    0.0
+  : b    1.0
+  : c    2.0
+  : d    3.0
+  : dtype: float64
+- Get by string index
+  #+begin_src hy :session Hy :results output
+  (obj.get "b")
+  #+end_src
+
+  #+RESULTS:
+  : 1.0
+- Get by slice index
+  #+begin_src hy :session Hy :results output
+  (obj.get (slice 2 4))
+  #+end_src
+
+  #+RESULTS:
+  : c    2.0
+  : d    3.0
+  : dtype: float64
+- Get (reindex) by list
+  #+begin_src hy :session Hy :results output
+  (obj.reindex ["b" "a" "d"])
+  #+end_src
+
+  #+RESULTS:
+  : b    1.0
+  : a    0.0
+  : d    3.0
+  : dtype: float64
+- Get selected rows
+  #+begin_src hy :session Hy :results output
+  (obj.get [1 3])
+  #+end_src
+
+  #+RESULTS:
+  : b    1.0
+  : d    3.0
+  : dtype: float64
+- Get by value
+  #+begin_src hy :session Hy :results output
+  (obj.get (< obj 2))
+  #+end_src
+
+  #+RESULTS:
+  : a    0.0
+  : b    1.0
+  : dtype: float64
+- Get by row names
+ #+begin_src hy :session Hy :results output
+ (obj.get (slice "b" "c"))
+ #+end_src
+
+ #+RESULTS:
+ : b    1.0
+ : c    2.0
+ : dtype: float64
+- Set with index
+  #+begin_src hy :session Hy :results output
+  (assoc obj (slice "b" "c") 5)
+  obj
+  #+end_src
+
+  #+RESULTS:
+  : a    0.0
+  : b    5.0
+  : c    5.0
+  : d    3.0
+  : dtype: float64
+- Set ~data~
+  #+begin_src hy :session Hy :results output
+    (setv data (pd.DataFrame (-> np (.arange 16) (.reshape (, 4 4)))
+                             :index ["Ohio" "Colorado" "Utah" "New York"]
+                             :columns ["one" "two" "three" "four"]))
+    (print-org-table data)
+  #+end_src
+
+  #+RESULTS:
+  : ... ...
+  : |          |   one |   two |   three |   four |
+  : |----------+-------+-------+---------+--------|
+  : | Ohio     |     0 |     1 |       2 |      3 |
+  : | Colorado |     4 |     5 |       6 |      7 |
+  : | Utah     |     8 |     9 |      10 |     11 |
+  : | New York |    12 |    13 |      14 |     15 |
+- Select by column name
+  #+begin_src hy :session Hy :results output
+  (data.get "two")
+  #+end_src
+
+  #+RESULTS:
+  : Ohio         1
+  : Colorado     5
+  : Utah         9
+  : New York    13
+  : Name: two, dtype: int64
+- Select several columns
+  #+begin_src hy :session Hy :results output
+  (print-org-table (data.get ["three" "one"]))
+  #+end_src
+
+  #+RESULTS:
+  : |          |   three |   one |
+  : |----------+---------+-------|
+  : | Ohio     |       2 |     0 |
+  : | Colorado |       6 |     4 |
+  : | Utah     |      10 |     8 |
+  : | New York |      14 |    12 |
+- Select slice of columns
+  #+begin_src hy :session Hy :results output
+  (print-org-table (data.get (slice 2)))
+  #+end_src
+
+  #+RESULTS:
+  : |          |   one |   two |   three |   four |
+  : |----------+-------+-------+---------+--------|
+  : | Ohio     |     0 |     1 |       2 |      3 |
+  : | Colorado |     4 |     5 |       6 |      7 |
+- Select by condition
+  #+begin_src hy :session Hy :results output
+  (print-org-table (data.get (> (data.get "three") 5)))
+  #+end_src
+
+  #+RESULTS:
+  : |          |   one |   two |   three |   four |
+  : |----------+-------+-------+---------+--------|
+  : | Colorado |     4 |     5 |       6 |      7 |
+  : | Utah     |     8 |     9 |      10 |     11 |
+  : | New York |    12 |    13 |      14 |     15 |
+- Boolean dataframe example
+  #+begin_src hy :session Hy :results output
+  (< data 5)
+  #+end_src
+
+  #+RESULTS:
+  : one    two  three   four
+  : Ohio       True   True   True   True
+  : Colorado   True  False  False  False
+  : Utah      False  False  False  False
+  : New York  False  False  False  False
+- Set using boolean dataframe
+  #+begin_src hy :session Hy :results output
+  (assoc data (< data 5) 0)
+  (print-org-table data)
+  #+end_src
+
+  #+RESULTS:
+  : |          |   one |   two |   three |   four |
+  : |----------+-------+-------+---------+--------|
+  : | Ohio     |     0 |     0 |       0 |      0 |
+  : | Colorado |     0 |     5 |       6 |      7 |
+  : | Utah     |     8 |     9 |      10 |     11 |
+  : | New York |    12 |    13 |      14 |     15 |
+
+**** Selection with ~loc~ and ~iloc~
+- Select single sub row by label
+  #+begin_src hy :session Hy :results output
+  (get data.loc "Colorado" ["two" "three"])
+  #+end_src
+
+  #+RESULTS:
+  : two      5
+  : three    6
+  : Name: Colorado, dtype: int64
+- Select single sub row using indices
+  #+begin_src hy :session Hy :results output
+  (get data.iloc 2 [3 0 1])
+  #+end_src
+
+  #+RESULTS:
+  : four    11
+  : one      8
+  : two      9
+  : Name: Utah, dtype: int64
+- Select full row by index
+  #+begin_src hy :session Hy :results output
+  (get data.iloc 2)
+  #+end_src
+
+  #+RESULTS:
+  : one       8
+  : two       9
+  : three    10
+  : four     11
+  : Name: Utah, dtype: int64
+- Select rows and columns using indices and reordering
+  #+begin_src hy :session Hy :results output
+  (print-org-table (get data.iloc (, [1 2] [3 0 1])))
+  #+end_src
+
+  #+RESULTS:
+  : |          |   four |   one |   two |
+  : |----------+--------+-------+-------|
+  : | Colorado |      7 |     0 |     5 |
+  : | Utah     |     11 |     8 |     9 |
+- Select with slices
+  #+begin_src hy :session Hy :results output
+  (get data.loc (, (slice "Utah") "two"))
+  #+end_src
+
+  #+RESULTS:
+  : Ohio        0
+  : Colorado    5
+  : Utah        9
+  : Name: two, dtype: int64
+- Select with slices and boolean dataframe
+  #+begin_src hy :session Hy :results output
+    (print-org-table (-> data.iloc
+                         (get (, (slice None None) (slice 3)))
+                         (get (> data.three 5))))
+  #+end_src
+
+  #+RESULTS:
+  : ... ...
+  : |          |   one |   two |   three |
+  : |----------+-------+-------+---------|
+  : | Colorado |     0 |     5 |       6 |
+  : | Utah     |     8 |     9 |      10 |
+  : | New York |    12 |    13 |      14 |
+
+*** Integer Indexes
+- Set ~ser~ and ~ser2~
+  #+begin_src hy :session Hy :results output
+  (setx ser (pd.Series (np.arange 3.)))
+  (setx ser2 (pd.Series (np.arange 3.) :index ["a" "b" "c"]))
+  #+end_src
+
+  #+RESULTS:
+  : 0    0.0
+  : 1    1.0
+  : 2    2.0
+  : dtype: float64
+  : a    0.0
+  : b    1.0
+  : c    2.0
+  : dtype: float64
+- Get by integer index from ~ser2~
+  #+begin_src hy :session Hy :results output
+  (get ser2 -1)
+  #+end_src
+
+  #+RESULTS:
+  : 2.0
+- Get by slice from ~ser~
+  #+begin_src hy :session Hy :results value output
+  (get ser (slice 1))
+  #+end_src
+
+  #+RESULTS:
+  : 0    0.0
+  : dtype: float64
+- Get by slice via ~loc~ from ~ser~
+  #+begin_src hy :session Hy :results output
+  (get ser.loc (slice 1))
+  #+end_src
+
+  #+RESULTS:
+  : 0    0.0
+  : 1    1.0
+  : dtype: float64
+- Get by slice via ~iloc~ from ~ser~
+  #+begin_src hy :session Hy :results output
+  (get ser.iloc (slice 1))
+  #+end_src
+
+  #+RESULTS:
+  : 0    0.0
+  : dtype: float64
+
+*** Arithmetic and Data Alignment
+- Next thing will be here
+  #+begin_src hy :session Hy :results output
+  (+ 2 2)
+  #+end_src
+
+  #+RESULTS:
+  : 4
+
+* 9 Visualization
+#+begin_src hy :session Hy :results file link :file "/tmp/myfig.png"
+(setv data (np.arange 10))
+(plt.plot data)
+(plt.savefig "/tmp/myfig.png")
+#+end_src
+
+#+RESULTS:
+[[file:/tmp/myfig.png]]
