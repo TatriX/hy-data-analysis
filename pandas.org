@@ -815,7 +815,7 @@ True
   : | Oregon   |   9 | nan |  10 |  11 |
   : | Texas    |   9 |   4 |  12 |   8 |
   : | Utah     |   0 | nan |   1 |   2 |
-**** Operation between ~~DataFrame~ and ~Series~
+**** Operation between ~DataFrame~ and ~Series~
 - Set ~arr~
   #+begin_src hy :session Hy :results output
   (setx arr (-> (np.arange 12.) (.reshape (, 3 4))))
@@ -922,6 +922,90 @@ True
   : | Texas  |  -1 |   0 |   1 |
   : | Oregon |  -1 |   0 |   1 |
 
+*** Function Application and Mapping
+- Set ~frame~
+  #+begin_src hy :session Hy :results output
+    (print-org-table
+      (setx frame (pd.DataFrame (np.random.randn 4 3)
+                                :columns (list "bde")
+                                :index ["Utah" "Ohio" "Texas" "Oregon"])))
+  #+end_src
+
+  #+RESULTS:
+  : ... ... ...
+  : |        |           b |         d |          e |
+  : |--------+-------------+-----------+------------|
+  : | Utah   | -1.17341    |  0.707083 | -0.263856  |
+  : | Ohio   | -0.371735   | -1.09474  |  0.753309  |
+  : | Texas  |  1.67655    |  0.925579 | -0.0480439 |
+  : | Oregon | -0.00600767 |  0.195848 | -1.57674   |
+- Call ~np.abs~ on ~frame~
+  #+begin_src hy :session Hy :results output
+  (np.abs frame)
+  #+end_src
+
+  #+RESULTS:
+  : b         d         e
+  : Utah    1.173412  0.707083  0.263856
+  : Ohio    0.371735  1.094736  0.753309
+  : Texas   1.676552  0.925579  0.048044
+  : Oregon  0.006008  0.195848  1.576739
+- Apply lambda
+  #+begin_src hy :session Hy :results output
+  (.apply frame (fn [x] (- (x.max) (x.min))))
+  #+end_src
+
+  #+RESULTS:
+  : b    2.849964
+  : d    2.020315
+  : e    2.330048
+  : dtype: float64
+- Apply to columns
+  #+begin_src hy :session Hy :results output
+  (.apply frame (fn [x] (- (.mean x) (.median x))) :axis "columns")
+  #+end_src
+
+  #+RESULTS:
+  : Utah      0.020461
+  : Ohio      0.134015
+  : Texas    -0.074217
+  : Oregon   -0.456292
+  : dtype: float64
+- Return ~Series~
+  #+begin_src hy :session Hy :results output
+  (print-org-table (.apply frame (fn [x] (pd.Series [(.min x) (.max x)] :index ["min" "max"]))))
+  #+end_src
+
+  #+RESULTS:
+  : |     |        b |         d |         e |
+  : |-----+----------+-----------+-----------|
+  : | min | -1.17341 | -1.09474  | -1.57674  |
+  : | max |  1.67655 |  0.925579 |  0.753309 |
+- Call ~applymap~ and format string with truncation
+  #+begin_src hy :session Hy :results output
+  (print-org-table (.applymap frame (fn [x] f"{x :.2}")))
+  #+end_src
+
+  #+RESULTS:
+  : |        |      b |     d |      e |
+  : |--------+--------+-------+--------|
+  : | Utah   | -1.2   |  0.71 | -0.26  |
+  : | Ohio   | -0.37  | -1.1  |  0.75  |
+  : | Texas  |  1.7   |  0.93 | -0.048 |
+  : | Oregon | -0.006 |  0.2  | -1.6   |
+- Series ~map~
+  #+begin_src hy :session Hy :results output
+    (.map (get frame "e") (fn [x] f"{x :.2}"))
+  #+end_src
+
+  #+RESULTS:
+  : Utah       -0.26
+  : Ohio        0.75
+  : Texas     -0.048
+  : Oregon      -1.6
+  : Name: e, dtype: object
+
+*** Sorting and Ranking
 * 9 Visualization
 #+begin_src hy :session Hy :results file link :file "/tmp/myfig.png"
 (setv data (np.arange 10))
