@@ -10,7 +10,6 @@ session as well as define helper functions.
   (import [numpy :as np])
   (import [pandas :as pd])
   (import [matplotlib.pyplot :as plt])
-
   (import [tabulate [tabulate]])
 
   (defn print-org-table [frame]
@@ -1004,13 +1003,251 @@ True
   : Texas     -0.048
   : Oregon      -1.6
   : Name: e, dtype: object
-
 *** Sorting and Ranking
+- Set ~obj~
+  #+begin_src hy :session Hy :results output
+  (setx obj (pd.Series (range 4) :index ["b" "a" "b" "c"]))
+  #+end_src
+
+  #+RESULTS:
+  : b    0
+  : a    1
+  : b    2
+  : c    3
+  : dtype: int64
+- Sort ~Series~ by index
+  #+begin_src hy :session Hy :results output
+  (obj.sort-index)
+  #+end_src
+
+  #+RESULTS:
+  : a    1
+  : b    0
+  : b    2
+  : c    3
+  : dtype: int64
+- Set ~frame~
+  #+begin_src hy :session Hy :results output
+    (print-org-table
+      (setx frame (pd.DataFrame (-> (np.arange 8) (.reshape (, 2 4)))
+                                :index ["three" "one"]
+                                :columns ["d" "a" "b" "c"])))
+  #+end_src
+
+  #+RESULTS:
+  : ... ... ...
+  : |       |   d |   a |   b |   c |
+  : |-------+-----+-----+-----+-----|
+  : | three |   0 |   1 |   2 |   3 |
+  : | one   |   4 |   5 |   6 |   7 |
+- Sort by rows (sort-index, axis = 0)
+  #+begin_src hy :session Hy :results output
+  (print-org-table (frame.sort-index))
+  #+end_src
+
+  #+RESULTS:
+  : |       |   d |   a |   b |   c |
+  : |-------+-----+-----+-----+-----|
+  : | one   |   4 |   5 |   6 |   7 |
+  : | three |   0 |   1 |   2 |   3 |
+- Sort by columns (sort-index, axis = 1)
+  #+begin_src hy :session Hy :results output
+  (print-org-table (frame.sort-index :axis 1))
+  #+end_src
+
+  #+RESULTS:
+  : |       |   a |   b |   c |   d |
+  : |-------+-----+-----+-----+-----|
+  : | three |   1 |   2 |   3 |   0 |
+  : | one   |   5 |   6 |   7 |   4 |
+- Sort order (ascending)
+  #+begin_src hy :session Hy :results output
+  (print-org-table (frame.sort-index :axis 1 :ascending False))
+  #+end_src
+
+  #+RESULTS:
+  : |       |   d |   c |   b |   a |
+  : |-------+-----+-----+-----+-----|
+  : | three |   0 |   3 |   2 |   1 |
+  : | one   |   4 |   7 |   6 |   5 |
+- Set ~obj~
+  #+begin_src hy :session Hy :results output
+  (setx obj (pd.Series [4 7 -3 2]))
+  #+end_src
+
+  #+RESULTS:
+  : 0    4
+  : 1    7
+  : 2   -3
+  : 3    2
+  : dtype: int64
+- Sort ~Series~ by value
+  #+begin_src hy :session Hy :results output
+  (obj.sort-values)
+  #+end_src
+
+  #+RESULTS:
+  : 2   -3
+  : 3    2
+  : 0    4
+  : 1    7
+  : dtype: int64
+- Set ~obj~ with missing values
+  #+begin_src hy :session Hy :results output
+  (setx obj (pd.Series [4 np.nan 7 np.nan -3 2]))
+  #+end_src
+
+  #+RESULTS:
+  : 0    4.0
+  : 1    NaN
+  : 2    7.0
+  : 3    NaN
+  : 4   -3.0
+  : 5    2.0
+  : dtype: float64
+- Sort ~Series~ with missing values
+  #+begin_src hy :session Hy :results output
+  (obj.sort-values)
+  #+end_src
+
+  #+RESULTS:
+  : 4   -3.0
+  : 5    2.0
+  : 0    4.0
+  : 2    7.0
+  : 1    NaN
+  : 3    NaN
+  : dtype: float64
+- Set ~frame~
+  #+begin_src hy :session Hy :results output
+  (print-org-table (setx frame (pd.DataFrame {"b" [4 7 -3 2] "a" [0 1 0 1]})))
+  #+end_src
+
+  #+RESULTS:
+  : |    |   b |   a |
+  : |----+-----+-----|
+  : |  0 |   4 |   0 |
+  : |  1 |   7 |   1 |
+  : |  2 |  -3 |   0 |
+  : |  3 |   2 |   1 |
+- Sort ~DataFrame~ by specified column
+  #+begin_src hy :session Hy :results output
+  (print-org-table (frame.sort-values :by "b"))
+  #+end_src
+
+  #+RESULTS:
+  : |    |   b |   a |
+  : |----+-----+-----|
+  : |  2 |  -3 |   0 |
+  : |  3 |   2 |   1 |
+  : |  0 |   4 |   0 |
+  : |  1 |   7 |   1 |
+- Sort ~DataFrame~ by multiple columns
+  #+begin_src hy :session Hy :results output
+  (print-org-table (frame.sort-values :by ["a" "b"]))
+  #+end_src
+
+  #+RESULTS:
+  : |    |   b |   a |
+  : |----+-----+-----|
+  : |  2 |  -3 |   0 |
+  : |  0 |   4 |   0 |
+  : |  3 |   2 |   1 |
+  : |  1 |   7 |   1 |
+- Set ~obj~
+  #+begin_src hy :session Hy :results output
+  (setx obj (pd.Series [7 -5 7 4 2 0 4]))
+  #+end_src
+
+  #+RESULTS:
+  : 0    7
+  : 1   -5
+  : 2    7
+  : 3    4
+  : 4    2
+  : 5    0
+  : 6    4
+  : dtype: int64
+- Ranking
+  #+begin_src hy :session Hy :results output
+  (obj.rank)
+  #+end_src
+
+  #+RESULTS:
+  : 0    6.5
+  : 1    1.0
+  : 2    6.5
+  : 3    4.5
+  : 4    3.0
+  : 5    2.0
+  : 6    4.5
+  : dtype: float64
+- Rank by ~first~
+  #+begin_src hy :session Hy :results output
+  (obj.rank :method "first")
+  #+end_src
+
+  #+RESULTS:
+  : 0    6.0
+  : 1    1.0
+  : 2    7.0
+  : 3    4.0
+  : 4    3.0
+  : 5    2.0
+  : 6    5.0
+  : dtype: float64
+- Rank in descending order using ~max~
+  #+begin_src hy :session Hy :results output
+  (obj.rank :ascending False :method "max")
+  #+end_src
+
+  #+RESULTS:
+  : 0    2.0
+  : 1    7.0
+  : 2    2.0
+  : 3    4.0
+  : 4    5.0
+  : 5    6.0
+  : 6    4.0
+  : dtype: float64
+- Set ~frame~
+  #+begin_src hy :session Hy :results output
+    (print-org-table
+      (setx frame (pd.DataFrame {"b" [4.3 7 -3 2]
+                                 "a" [0 1 0 1]
+                                 "c" [-2 5 8 -2.5]})))
+  #+end_src
+
+  #+RESULTS:
+  : ... ... ...
+  : |    |    b |   a |    c |
+  : |----+------+-----+------|
+  : |  0 |  4.3 |   0 | -2   |
+  : |  1 |  7   |   1 |  5   |
+  : |  2 | -3   |   0 |  8   |
+  : |  3 |  2   |   1 | -2.5 |
+- Rank ~DataFrame~ by columns
+  #+begin_src hy :session Hy :results output
+  (print-org-table (frame.rank :axis "columns"))
+  #+end_src
+
+  #+RESULTS:
+  : |    |   b |   a |   c |
+  : |----+-----+-----+-----|
+  : |  0 |   3 |   2 |   1 |
+  : |  1 |   3 |   1 |   2 |
+  : |  2 |   1 |   2 |   3 |
+  : |  3 |   3 |   2 |   1 |
+*** Axis Indexes with Duplicate Labels
+- TBD
 * 9 Visualization
 #+begin_src hy :session Hy :results file link :file "/tmp/myfig.png"
-(setv data (np.arange 10))
-(plt.plot data)
-(plt.savefig "/tmp/myfig.png")
+  (setv data (np.linspace (- np.pi) np.pi 201))
+  (plt.plot data (np.sin data))
+  (plt.xlabel "Angle [rad]")
+  (plt.ylabel "sin(x)")
+  (plt.axis "tight")
+  (plt.savefig "/tmp/myfig.png")
 #+end_src
 
 #+RESULTS:
