@@ -1050,7 +1050,6 @@ True
   #+end_src
 
   #+RESULTS:
-  : ... ... ...
   : |       |   d |   a |   b |   c |
   : |-------+-----+-----+-----+-----|
   : | three |   0 |   1 |   2 |   3 |
@@ -1227,14 +1226,12 @@ True
   : dtype: float64
 - Set ~frame~
   #+begin_src hy :session Hy :results output
-    (print-org-table
       (setx frame (pd.DataFrame {"b" [4.3 7 -3 2]
                                  "a" [0 1 0 1]
-                                 "c" [-2 5 8 -2.5]})))
+                                 "c" [-2 5 8 -2.5]}))
   #+end_src
 
   #+RESULTS:
-  : ... ... ...
   : |    |    b |   a |    c |
   : |----+------+-----+------|
   : |  0 |  4.3 |   0 | -2   |
@@ -1243,7 +1240,7 @@ True
   : |  3 |  2   |   1 | -2.5 |
 - Rank ~DataFrame~ by columns
   #+begin_src hy :session Hy :results output
-  (print-org-table (frame.rank :axis "columns"))
+  (frame.rank :axis "columns")
   #+end_src
 
   #+RESULTS:
@@ -1254,7 +1251,63 @@ True
   : |  2 |   1 |   2 |   3 |
   : |  3 |   3 |   2 |   1 |
 *** Axis Indexes with Duplicate Labels
-- TBD
+- Set ~obj~
+  #+begin_src hy :session Hy :results output
+  (setx obj (pd.Series (range 5) :index ["a" "a" "b" "b" "c"]))
+  #+end_src
+
+  #+RESULTS:
+  : a    0
+  : a    1
+  : b    2
+  : b    3
+  : c    4
+  : dtype: int64
+- Check if index ~is_unique~
+  #+begin_src hy :session Hy :results output
+  (. obj index is-unique)
+  #+end_src
+
+  #+RESULTS:
+  : False
+- Index duplicated label
+  #+begin_src hy :session Hy :results output
+  (get obj "a")
+  #+end_src
+
+  #+RESULTS:
+  : a    0
+  : a    1
+  : dtype: int64
+- Index single label
+  #+begin_src hy :session Hy :results output
+  (get obj "c")
+  #+end_src
+
+  #+RESULTS:
+  : 4
+- Duplicates in ~DataFrame~
+  #+begin_src hy :session Hy :results output
+  (setx df (pd.DataFrame (np.random.randn 4 3) :index ["a" "a" "b" "b"]))
+  #+end_src
+
+  #+RESULTS:
+  : |    |        0 |         1 |        2 |
+  : |----+----------+-----------+----------|
+  : | a  | 0.817643 |  0.603296 | -1.25922 |
+  : | a  | 0.838319 |  0.19226  |  1.32208 |
+  : | b  | 1.90893  | -0.775023 | -1.11777 |
+  : | b  | 1.70099  |  0.311632 | -1.51343 |
+- Get ~df.loc["b"]~
+  #+begin_src hy :session Hy :results output
+  (get df.loc "b")
+  #+end_src
+
+  #+RESULTS:
+  : |    |       0 |         1 |        2 |
+  : |----+---------+-----------+----------|
+  : | b  | 1.90893 | -0.775023 | -1.11777 |
+  : | b  | 1.70099 |  0.311632 | -1.51343 |
 * 9 Visualization
 #+begin_src hy :session Hy :results file link :file "/tmp/myfig.png"
   (setv data (np.linspace (- np.pi) np.pi 201))
