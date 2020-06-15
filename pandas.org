@@ -6,16 +6,31 @@
 Import ~numpy~, ~pandas~ and ~matplotlib~ optionally starting =*Hy*=
 session as well as define helper functions.
 
-#+begin_src hy :session Hy :results silent
+#+name: my-hy-setup
+#+begin_src hy :session Hy :results output
   (import [numpy :as np])
   (import [pandas :as pd])
   (import [matplotlib.pyplot :as plt])
   (import [tabulate [tabulate]])
+  (import sys)
+  (import [hy.contrib.hy-repr [hy-repr-register]])
+
+  (setv sys.ps2 "") ; Disable annoying "..."
+
+  (plt.ion)
 
   (defn print-org-table [frame]
     (print)
     (print (tabulate frame :headers "keys" :tablefmt "orgtbl")))
+
+  (hy-repr-register pd.DataFrame
+                            :placeholder "HY THERE"
+                            (fn [frame]
+                              (tabulate frame :headers "keys" :tablefmt "orgtbl")))
 #+end_src
+
+#+RESULTS: my-hy-setup
+
 * 5 Getting Started with pandas
 ** TODO 5.1 Introduction to pandas Data Structures (Series)
 *** Series
