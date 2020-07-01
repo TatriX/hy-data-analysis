@@ -1309,6 +1309,7 @@ True
   : | b  | 1.90893 | -0.775023 | -1.11777 |
   : | b  | 1.70099 |  0.311632 | -1.51343 |
 ** 5.3 Summarizing and Computing Descriptive Statistics
+*** Intro
 - Set ~df~
   #+begin_src hy :session Hy :results output
   (setx df (pd.DataFrame [[1.4 np.nan] [7.1 -4.5]
@@ -1405,6 +1406,86 @@ True
   : top        a
   : freq       8
   : dtype: object
+*** Correlation and Covariance
+- Import data
+  #+begin_src hy :session Hy :results output
+  (import [pandas-datareader [data :as web]])
+  (setv all-data (dfor ticker ["AAPL" "IBM" "MSFT" "GOOG"] [ticker (web.get-data-yahoo ticker)]))
+  #+end_src
+
+  #+RESULTS:
+- Set ~price~, ~volume~ and ~returns~
+  #+begin_src hy :session Hy :results output
+  (setv price (pd.DataFrame (dfor [ticker data] (all-data.items) [ticker (get data "Adj Close")])))
+  (setv volume (pd.DataFrame (dfor [ticker data] (all-data.items) [ticker (get data "Volume")])))
+  (setv returns (price.pct-change))
+  (.tail returns)
+  #+end_src
+
+  #+RESULTS:
+  : | Date                |        AAPL |         IBM |       MSFT |        GOOG |
+  : |---------------------+-------------+-------------+------------+-------------|
+  : | 2020-06-24 00:00:00 | -0.017652   | -0.0250398  | -0.0201575 | -0.0221523  |
+  : | 2020-06-25 00:00:00 |  0.0132756  |  0.0224188  |  0.0126365 |  0.00653644 |
+  : | 2020-06-26 00:00:00 | -0.0307258  | -0.0154583  | -0.0200159 | -0.0564964  |
+  : | 2020-06-29 00:00:00 |  0.0230467  |  0.0218448  |  0.0107472 |  0.0257886  |
+  : | 2020-06-30 00:00:00 |  0.00834758 |  0.00851772 |  0.0255492 |  0.0133623  |
+- Calculate Correlation and Covariance between Series
+  #+begin_src hy :session Hy :results output
+  (.corr (get returns "MSFT") (get returns "IBM"))
+  (.cov (get returns "MSFT") (get returns "IBM"))
+  #+end_src
+
+  #+RESULTS:
+  : 0.5950819274212011
+  : 0.00016686777308174653
+- Correlation for DataFrame
+  #+begin_src hy :session Hy :results output
+  (.corr returns)
+  #+end_src
+
+  #+RESULTS:
+  : |      |     AAPL |      IBM |     MSFT |     GOOG |
+  : |------+----------+----------+----------+----------|
+  : | AAPL | 1        | 0.529544 | 0.71453  | 0.646298 |
+  : | IBM  | 0.529544 | 1        | 0.595082 | 0.527718 |
+  : | MSFT | 0.71453  | 0.595082 | 1        | 0.751345 |
+  : | GOOG | 0.646298 | 0.527718 | 0.751345 | 1        |
+- Covariance for DataFrame
+  #+begin_src hy :session Hy :results output
+  (.cov returns)
+  #+end_src
+
+  #+RESULTS:
+  : |      |        AAPL |         IBM |        MSFT |        GOOG |
+  : |------+-------------+-------------+-------------+-------------|
+  : | AAPL | 0.000334221 | 0.000156435 | 0.000226682 | 0.000204089 |
+  : | IBM  | 0.000156435 | 0.000261114 | 0.000166868 | 0.000147295 |
+  : | MSFT | 0.000226682 | 0.000166868 | 0.000301136 | 0.000225211 |
+  : | GOOG | 0.000204089 | 0.000147295 | 0.000225211 | 0.00029836  |
+- Pairwise correlations with Series
+  #+begin_src hy :session Hy :results output
+  (.corrwith returns (get returns "IBM"))
+  #+end_src
+
+  #+RESULTS:
+  : AAPL    0.529544
+  : IBM     1.000000
+  : MSFT    0.595082
+  : GOOG    0.527718
+  : dtype: float64
+- Pairwise correlations with DataFrame
+  #+begin_src hy :session Hy :results output
+  (.corrwith returns volume)
+  #+end_src
+
+  #+RESULTS:
+  : AAPL   -0.140623
+  : IBM    -0.115468
+  : MSFT   -0.066072
+  : GOOG   -0.046790
+  : dtype: float64
+
 * 9 Visualization
 #+begin_src hy :session Hy :results file link :file "/tmp/myfig.png"
   (setv data (np.linspace (- np.pi) np.pi 201))
