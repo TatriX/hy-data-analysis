@@ -31,8 +31,8 @@ session as well as define helper functions.
 
 #+RESULTS: my-hy-setup
 
-* 5 Getting Started with pandas
-** TODO 5.1 Introduction to pandas Data Structures (Series)
+* Chapter 5. Getting Started with pandas
+** 5.1 Introduction to pandas Data Structures (Series)
 *** Series
 So, ~Series~ is a one dimensional array-like object with data labels ~index~.
 In context of ~DataFrame~, ~Series~ is a column.
@@ -1565,7 +1565,189 @@ True
   |  5 |     0 |     0 |     1 |
   #+end_example
 
-* 9 Visualization
+* Chapter 6. Data Loading, Storage, and File Formats
+** 6.1 Reading and Writing Data in Text Format
+*** 6.1 Reading and Writing Data in Text Format (185)
+**** First, let's look at the file content
+#+begin_src shell
+cat ./pydata-book/examples/ex1.csv
+#+end_src
+
+#+RESULTS:
+| a |  b |  c |  d | message |
+| 1 |  2 |  3 |  4 | hello   |
+| 5 |  6 |  7 |  8 | world   |
+| 9 | 10 | 11 | 12 | foo     |
+**** Read csv into ~DataFrame~ =df=
+#+begin_src hy :session Hy :results output :dir
+(setx df (pd.read-csv "./pydata-book/examples/ex1.csv"))
+#+end_src
+
+#+RESULTS:
+: |    |   a |   b |   c |   d | message   |
+: |----+-----+-----+-----+-----+-----------|
+: |  0 |   1 |   2 |   3 |   4 | hello     |
+: |  1 |   5 |   6 |   7 |   8 | world     |
+: |  2 |   9 |  10 |  11 |  12 | foo       |
+**** Take a look at a file without headers
+#+begin_src shell
+cat ./pydata-book/examples/ex2.csv
+#+end_src
+
+#+RESULTS:
+| 1 |  2 |  3 |  4 | hello |
+| 5 |  6 |  7 |  8 | world |
+| 9 | 10 | 11 | 12 | foo   |
+**** Read csv into ~DataFrame~ without headers
+#+begin_src hy :session Hy :results output
+(pd.read-csv "./pydata-book/examples/ex2.csv" :header None)
+#+end_src
+
+#+RESULTS:
+: |    |   0 |   1 |   2 |   3 | 4     |
+: |----+-----+-----+-----+-----+-------|
+: |  0 |   1 |   2 |   3 |   4 | hello |
+: |  1 |   5 |   6 |   7 |   8 | world |
+: |  2 |   9 |  10 |  11 |  12 | foo   |
+**** Or provide headers ourselves
+#+begin_src hy :session Hy :results output
+(pd.read-csv "./pydata-book/examples/ex2.csv" :names ["a" "b" "c" "d" "message"])
+#+end_src
+
+#+RESULTS:
+: |    |   a |   b |   c |   d | message   |
+: |----+-----+-----+-----+-----+-----------|
+: |  0 |   1 |   2 |   3 |   4 | hello     |
+: |  1 |   5 |   6 |   7 |   8 | world     |
+: |  2 |   9 |  10 |  11 |  12 | foo       |
+**** Use specified column as an index
+#+begin_src hy :session Hy :results output
+(setv names ["a" "b" "c" "d" "message"])
+(pd.read-csv "./pydata-book/examples/ex2.csv" :names names :index-col "message")
+#+end_src
+
+#+RESULTS:
+: | message   |   a |   b |   c |   d |
+: |-----------+-----+-----+-----+-----|
+: | hello     |   1 |   2 |   3 |   4 |
+: | world     |   5 |   6 |   7 |   8 |
+: | foo       |   9 |  10 |  11 |  12 |
+**** Hierarchical index file
+#+begin_src shell
+cat ./pydata-book/examples/csv_mindex.csv
+#+end_src
+
+#+RESULTS:
+| key1 | key2 | value1 | value2 |
+| one  | a    |      1 |      2 |
+| one  | b    |      3 |      4 |
+| one  | c    |      5 |      6 |
+| one  | d    |      7 |      8 |
+| two  | a    |      9 |     10 |
+| two  | b    |     11 |     12 |
+| two  | c    |     13 |     14 |
+| two  | d    |     15 |     16 |
+**** Use multiple indices
+#+begin_src hy :session Hy :results output
+(setx parsed (pd.read-csv "./pydata-book/examples/csv_mindex.csv" :index-col ["key1" "key2"]))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+|              |   value1 |   value2 |
+|--------------+----------+----------|
+| ('one', 'a') |        1 |        2 |
+| ('one', 'b') |        3 |        4 |
+| ('one', 'c') |        5 |        6 |
+| ('one', 'd') |        7 |        8 |
+| ('two', 'a') |        9 |       10 |
+| ('two', 'b') |       11 |       12 |
+| ('two', 'c') |       13 |       14 |
+| ('two', 'd') |       15 |       16 |
+#+end_example
+**** Whitespace delimiter
+#+begin_src hy :session Hy :results output
+(pd.read-table "./pydata-book/examples/ex3.txt" :sep "\s+")
+#+end_src
+
+#+RESULTS:
+: |     |         A |         B |         C |
+: |-----+-----------+-----------+-----------|
+: | aaa | -0.264438 | -1.02606  | -0.6195   |
+: | bbb |  0.927272 |  0.302904 | -0.032399 |
+: | ccc | -0.264273 | -0.386314 | -0.217601 |
+: | ddd | -0.871858 | -0.348382 |  1.10049  |
+**** Look at file with garbage rows
+#+begin_src shell :results drawer
+cat ./pydata-book/examples/ex4.csv
+#+end_src
+
+#+RESULTS:
+:results:
+# hey!
+a,b,c,d,message
+# just wanted to make things more difficult for you
+# who reads CSV files with computers, anyway?
+1,2,3,4,hello
+5,6,7,8,world
+9,10,11,12,foo
+:end:
+**** Read file skipping garbage rows
+#+begin_src hy :session Hy :results output
+(pd.read-csv "./pydata-book/examples/ex4.csv" :skiprows [0 2 3])
+#+end_src
+
+#+RESULTS:
+: |    |   a |   b |   c |   d | message   |
+: |----+-----+-----+-----+-----+-----------|
+: |  0 |   1 |   2 |   3 |   4 | hello     |
+: |  1 |   5 |   6 |   7 |   8 | world     |
+: |  2 |   9 |  10 |  11 |  12 | foo       |
+**** Look at missing (NA) values
+#+begin_src shell
+cat ./pydata-book/examples/ex5.csv
+#+end_src
+
+#+RESULTS:
+| something | a |  b |  c |  d | message |
+| one       | 1 |  2 |  3 |  4 | NA      |
+| two       | 5 |  6 |    |  8 | world   |
+| three     | 9 | 10 | 11 | 12 | foo     |
+**** Read file with missing values
+#+begin_src hy :session Hy :results output
+  (setx result (pd.read-csv "./pydata-book/examples/ex5.csv"))
+  (pd.isnull result)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+|    | something   |   a |   b |   c |   d | message   |
+|----+-------------+-----+-----+-----+-----+-----------|
+|  0 | one         |   1 |   2 |   3 |   4 | nan       |
+|  1 | two         |   5 |   6 | nan |   8 | world     |
+|  2 | three       |   9 |  10 |  11 |  12 | foo       |
+|    |   something |   a |   b |   c |   d |   message |
+|----+-------------+-----+-----+-----+-----+-----------|
+|  0 |           0 |   0 |   0 |   0 |   0 |         1 |
+|  1 |           0 |   0 |   0 |   1 |   0 |         0 |
+|  2 |           0 |   0 |   0 |   0 |   0 |         0 |
+#+end_example
+****
+**** Use different NA sentinels
+#+begin_src hy :session Hy :results output
+(setx sentinels {"message" ["foo" "NA"] "something" "two"})
+(pd.read-csv "./pydata-book/examples/ex5.csv" :na-values sentinels)
+#+end_src
+
+#+RESULTS:
+: {"message" ["foo" "NA"]  "something" "two"}
+: |    | something   |   a |   b |   c |   d | message   |
+: |----+-------------+-----+-----+-----+-----+-----------|
+: |  0 | one         |   1 |   2 |   3 |   4 | nan       |
+: |  1 | nan         |   5 |   6 | nan |   8 | world     |
+: |  2 | three       |   9 |  10 |  11 |  12 | nan       |
+
+* Chapter 9. Visualization
 #+begin_src hy :session Hy :results file link :file "/tmp/myfig.png"
   (setv data (np.linspace (- np.pi) np.pi 201))
   (plt.plot data (np.sin data))
