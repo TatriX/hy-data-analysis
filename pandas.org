@@ -23,14 +23,17 @@ session as well as define helper functions.
     (print)
     (print (tabulate frame :headers "keys" :tablefmt "orgtbl")))
 
-  (hy-repr-register pd.DataFrame
-                            :placeholder "HY THERE"
-                            (fn [frame]
-                              (tabulate frame :headers "keys" :tablefmt "orgtbl")))
+  ;; This breaks `pd.options.display.max-rows`
+  ;; (hy-repr-register pd.DataFrame
+  ;;                           :placeholder "HY THERE"
+  ;;                           (fn [frame]
+  ;;                             (tabulate frame :headers "keys" :tablefmt "orgtbl")))
 #+end_src
 
 #+RESULTS: my-hy-setup
-
+* Language notes
+** Slices
+For ~a[:10]~ use ~(cut a 0 10)~
 * Chapter 5. Getting Started with pandas
 ** 5.1 Introduction to pandas Data Structures (Series)
 *** Series
@@ -1567,7 +1570,7 @@ True
 
 * Chapter 6. Data Loading, Storage, and File Formats
 ** 6.1 Reading and Writing Data in Text Format
-*** 6.1 Reading and Writing Data in Text Format (185)
+*** Reading and Writing Data in Text Format
 **** First, let's look at the file content
 #+begin_src shell
 cat ./pydata-book/examples/ex1.csv
@@ -1746,6 +1749,66 @@ cat ./pydata-book/examples/ex5.csv
 : |  0 | one         |   1 |   2 |   3 |   4 | nan       |
 : |  1 | nan         |   5 |   6 | nan |   8 | world     |
 : |  2 | three       |   9 |  10 |  11 |  12 | nan       |
+*** Reading Text Files in Pieces
+**** Setting ~display.max-rows~
+#+begin_src hy :session Hy :results output
+  (setv pd.options.display.max-rows 10)
+  (setx result (pd.read-csv "./pydata-book/examples/ex6.csv"))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+one       two     three      four key
+0     0.467976 -0.038649 -0.295344 -1.824726   L
+1    -0.358893  1.404453  0.704965 -0.200638   B
+2    -0.501840  0.659254 -0.421691 -0.057688   G
+3     0.204886  1.074134  1.388361 -0.982404   R
+4     0.354628 -0.133116  0.283763 -0.837063   Q
+...        ...       ...       ...       ...  ..
+9995  2.311896 -0.417070 -1.409599 -0.515821   L
+9996 -0.479893 -0.650419  0.745152 -0.646038   E
+9997  0.523331  0.787112  0.486066  1.093156   K
+9998 -0.362559  0.598894 -1.843201  0.887292   G
+9999 -0.096376 -1.012999 -0.657431 -0.573315   0
+
+[10000 rows x 5 columns]
+#+end_example
+**** Read subset of data
+#+begin_src hy :session Hy :results output
+  (pd.read-csv "./pydata-book/examples/ex6.csv" :nrows 5)
+#+end_src
+
+#+RESULTS:
+: one       two     three      four key
+: 0  0.467976 -0.038649 -0.295344 -1.824726   L
+: 1 -0.358893  1.404453  0.704965 -0.200638   B
+: 2 -0.501840  0.659254 -0.421691 -0.057688   G
+: 3  0.204886  1.074134  1.388361 -0.982404   R
+: 4  0.354628 -0.133116  0.283763 -0.837063   Q
+**** Read file in chunks
+#+begin_src hy :session Hy :results output
+  (setv chunker (pd.read-csv "./pydata-book/examples/ex6.csv" :chunksize 1000))
+  (setv tot (pd.Series []))
+  (for [piece chunker]
+    (setv tot (tot.add (.value-counts (get piece "key")) :fill-value 0)))
+  (setv tot (.sort-values tot :ascending False))
+  (cut tot 0 10)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+E    368.0
+X    364.0
+L    346.0
+O    343.0
+Q    340.0
+M    338.0
+J    337.0
+F    335.0
+K    334.0
+H    330.0
+dtype: float64
+#+end_example
 
 * Chapter 9. Visualization
 #+begin_src hy :session Hy :results file link :file "/tmp/myfig.png"
