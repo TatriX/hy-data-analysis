@@ -1809,17 +1809,246 @@ K    334.0
 H    330.0
 dtype: float64
 #+end_example
+*** Writing Data to Text Format
+**** Read and write data
+#+begin_src hy :session Hy :results output
+  (setv data (pd.read-csv "./pydata-book/examples/ex5.csv"))
+  (print data)
+  (data.to-csv "/tmp/out.csv")
+#+end_src
+
+#+RESULTS:
+: something  a   b     c   d message
+: 0       one  1   2   3.0   4     NaN
+: 1       two  5   6   NaN   8   world
+: 2     three  9  10  11.0  12     foo
+
+**** Check that it's actually written
+#+begin_src shell
+cat /tmp/out.csv
+#+end_src
+
+#+RESULTS:
+|   | something | a |  b |    c |  d | message |
+| 0 | one       | 1 |  2 |  3.0 |  4 |         |
+| 1 | two       | 5 |  6 |      |  8 | world   |
+| 2 | three     | 9 | 10 | 11.0 | 12 | foo     |
+
+**** Write to stdout with custom separator
+#+begin_src hy :session Hy :results output
+(data.to-csv sys.stdout :sep "|")
+#+end_src
+
+#+RESULTS:
+: |something|a|b|c|d|message
+: 0|one|1|2|3.0|4|
+: 1|two|5|6||8|world
+: 2|three|9|10|11.0|12|foo
+
+**** Replace missing values
+#+begin_src hy :session Hy :results output
+(data.to-csv sys.stdout :na-rep "NULL")
+#+end_src
+
+#+RESULTS:
+: ,something,a,b,c,d,message
+: 0,one,1,2,3.0,4,NULL
+: 1,two,5,6,NULL,8,world
+: 2,three,9,10,11.0,12,foo
+
+**** Disable row and column headers
+#+begin_src hy :session Hy :results output
+(data.to-csv sys.stdout :index False :header False)
+#+end_src
+
+#+RESULTS:
+: one,1,2,3.0,4,
+: two,5,6,,8,world
+: three,9,10,11.0,12,foo
+
+**** Write subset of columns
+#+begin_src hy :session Hy :results output
+(data.to-csv sys.stdout :index False :columns ["a" "b" "c"])
+#+end_src
+
+#+RESULTS:
+: a,b,c
+: 1,2,3.0
+: 5,6,
+: 9,10,11.0
+
+**** Write ~Series~
+#+begin_src hy :session Hy :results output
+  (setv dates (pd.date-range "1/1/2000" :periods 7))
+  (setv ts (pd.Series (np.arange 7) :index dates))
+  (ts.to-csv sys.stdout :header False)
+#+end_src
+
+#+RESULTS:
+: 2000-01-01,0
+: 2000-01-02,1
+: 2000-01-03,2
+: 2000-01-04,3
+: 2000-01-05,4
+: 2000-01-06,5
+: 2000-01-07,6
+*** Working with Delimited Formats
+**** Look at malformed file
+#+begin_src shell
+cat ./pydata-book/examples/ex7.csv
+#+end_src
+
+#+RESULTS:
+| a | b | c |
+| 1 | 2 | 3 |
+| 1 | 2 | 3 |
+**** Read via ~csv~ module
+#+begin_src hy :session Hy :results output
+  (import csv)
+  (setv f (open "./pydata-book/examples/ex7.csv"))
+  (setv reader (csv.reader f))
+  (for [line reader]
+    (print line))
+#+end_src
+
+#+RESULTS:
+: ... ['a', 'b', 'c']
+: ['1', '2', '3']
+: ['1', '2', '3']
+**** Wrangle it
+#+begin_src hy :session Hy :results output
+  (with [f (open "./pydata-book/examples/ex7.csv")]
+    (setv lines (list (csv.reader f))))
+
+  (setv [header values] [(get lines 0) (cut lines 1)])
+  (setx data-dict (dfor [v h] (zip header (zip #* values)) [v h]))
+#+end_src
+
+#+RESULTS:
+: {"a" (, "1" "1")  "b" (, "2" "2")  "c" (, "3" "3")}
+**** Custom format
+#+begin_src hy :session Hy :results silent
+  (defclass my-dialect [csv.Dialect]
+    (setv lineterminator "\n")
+    (setv delimiter ";")
+    (setv quotechar "\"")
+    (setv quoting csv.QUOTE-MINIMAL))
+
+  (setv reader (csv.reader f :dialect my-dialect))
+  (with [f (open "/tmp/mydata.csv" "w")]
+    (setv writer (csv.writer f :dialect my-dialect))
+    (writer.writerow ["one" "two" "three"])
+    (writer.writerow ["1" "2" "3"]))
+#+end_src
+**** Look at custom data
+#+begin_src shell
+cat /tmp/mydata.csv
+#+end_src
+
+#+RESULTS:
+| one;two;three |
+| 1;2;3         |
+*** JSON data
+**** Get some JSON
+#+begin_src hy :session Hy :results output
+  (setv obj #[[
+               {"name": "Wes",
+                "places_lived": ["United States", "Spain", "Germany"],
+                "pet": null,
+                "siblings": [{"name": "Scott", "age": 30, "pets": ["Zeus", "Zuko"]},
+                             {"name": "Katie", "age": 38,
+                              "pets": ["Sixes", "Stache", "Cisco"]}]
+                }
+               ]])
+#+end_src
+
+#+RESULTS:
+**** Parse JSON
+#+begin_src hy :session Hy :results output
+(import json)
+(setx result (json.loads obj))
+#+end_src
+
+#+RESULTS:
+: {"name" "Wes"  "places_lived" ["United States" "Spain" "Germany"]  "pet" None  "siblings" [{"name" "Scott"  "age" 30  "pets" ["Zeus" "Zuko"]} {"name" "Katie"  "age" 38  "pets" ["Sixes" "Stache" "Cisco"]}]}
+**** Serialize JSON
+#+begin_src hy :session Hy :results output
+(setv asjson (json.dumps result))
+#+end_src
+
+#+RESULTS:
+**** Converting JSON to DataFrame
+#+begin_src hy :session Hy :results output
+(setx siblings (pd.DataFrame (get result "siblings") :columns ["name" "age"]))
+#+end_src
+
+#+RESULTS:
+: name  age
+: 0  Scott   30
+: 1  Katie   38
+**** Reading JSON
+#+begin_src shell :results verbatim
+  cat ./pydata-book/examples/example.json
+#+end_src
+
+#+RESULTS:
+: [{"a": 1, "b": 2, "c": 3},
+:  {"a": 4, "b": 5, "c": 6},
+:  {"a": 7, "b": 8, "c": 9}]
+
+#+begin_src hy :session Hy :results output
+  (setx data (pd.read_json "./pydata-book/examples/example.json"))
+#+end_src
+
+#+RESULTS:
+: a  b  c
+: 0  1  2  3
+: 1  4  5  6
+: 2  7  8  9
+**** DataFrame to JSON
+#+begin_src hy :session Hy :results output
+  (print (.to-json data))
+#+end_src
+
+#+RESULTS:
+: {"a":{"0":1,"1":4,"2":7},"b":{"0":2,"1":5,"2":8},"c":{"0":3,"1":6,"2":9}}
+
+#+begin_src hy :session Hy :results output
+  (print (.to-json data :orient "records"))
+#+end_src
+
+#+RESULTS:
+: [{"a":1,"b":2,"c":3},{"a":4,"b":5,"c":6},{"a":7,"b":8,"c":9}]
 
 * Chapter 9. Visualization
-#+begin_src hy :session Hy :results file link :file "/tmp/myfig.png"
+** Test
+#+begin_src hy :session Hy :results file link :file "images/myfig.png"
   (setv data (np.linspace (- np.pi) np.pi 201))
+  (plt.clf) ;; clear current figure
   (plt.plot data (np.sin data))
   (plt.xlabel "Angle [rad]")
   (plt.ylabel "sin(x)")
   (plt.axis "tight")
   (plt.grid)
-  (plt.savefig "/tmp/myfig.png")
+  (plt.savefig "images/myfig.png")
 #+end_src
 
 #+RESULTS:
-[[file:/tmp/myfig.png]]
+[[file:images/myfig.png]]
+** Figures and Subplots
+#+begin_src hy :session Hy :results file link :file "images/subplots.png"
+  (plt.clf)
+  (setv fig (plt.figure))
+  (setv ax1 (fig.add-subplot 2 2 1))
+  (setv ax2 (fig.add-subplot 2 2 2))
+  (setv ax3 (fig.add-subplot 2 2 3))
+  (ax1.hist (np.random.randn 100) :bins 20 :color "k" :alpha 0.3)
+  (ax2.scatter (np.arange 30)
+               (+ (np.arange 30) (* 3 (np.random.randn 30))))
+  (ax3.plot (.cumsum (np.random.randn 50)) "k--")
+  (plt.grid)
+  (plt.savefig "images/subplots.png" :dpi 140)
+#+end_src
+
+#+RESULTS:
+[[file:images/subplots.png]]
